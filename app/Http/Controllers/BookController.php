@@ -15,7 +15,9 @@ class BookController extends Controller
     {
         $title = $request->input('title'); // Get the 'title' input from the request
         $filter = $request->input('filter', ''); // get the 'filter' input from the request
-        $books = Book::when($title, fn($query, $title) =>  $query->title($title));   // Conditionally add the 'title' scope to the query, if 'title' is null get all books)
+        $books = Book::when($title, 
+        fn($query, $title) =>  $query->title($title)
+        );   // Conditionally add the 'title' scope to the query, if 'title' is null get all books)
 
         $books = match($filter)
         {
@@ -23,11 +25,17 @@ class BookController extends Controller
             'popular_last_6months' => $books->popularLast6Months(),
             'highest_rated_last_month' => $books->highestRatedLastMonth(),
             'highest_rated_last_6months' => $books->highestRatedLast6Months(),
-            default => $books->latest()
+            default => $books->latest()->withAverageRating()->withReviewsCount()
         };
         // $books = $books->get();
         $cacheKey = 'books:' . $filter . ':' . $title;
-        $books = cache()->remember($cacheKey, 3600, fn() => $books->get());
+        $books = 
+            // cache()->remember(
+            // $cacheKey,
+            // 3600,
+            //fn() => 
+            $books->get();
+        //);
 
         return view('books.index', ['books'=>$books]);
     }
@@ -51,12 +59,16 @@ class BookController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Book $book)
+    public function show(int $id)
     {
-        $cacheKey = 'book:' . $book->id;
-        $book = cache()->remember($cacheKey, 3600, fn()=> $book->load([
+        $cacheKey = 'book:' . $id;
+        $book = cache()->remember($cacheKey,
+        3600,
+        fn()=> 
+        Book::with([
             'reviews' => fn ($query) => $query->latest()
-        ]));
+        ])->withAverageRating()->withReviewsCount()->findOrFail($id)
+        );
 
         return view( 'books.show',['book' => $book]);
     }
