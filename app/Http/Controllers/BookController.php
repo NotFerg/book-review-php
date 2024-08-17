@@ -12,8 +12,8 @@ class BookController extends Controller
      */
     public function index(Request $request)
     {
-        $title = $request->input('title');
-        $books = Book::when($title, fn($query, $title) =>  $query->title($title)   
+        $title = $request->input('title'); // Get the 'title' input from the request
+        $books = Book::when($title, fn($query, $title) =>  $query->title($title)   // Conditionally add the 'title' scope to the query, if 'title' is null get all books
         )->get();
 
         return view('books.index', ['books'=>$books]);
